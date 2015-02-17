@@ -22,7 +22,7 @@ class AuthController extends Controller {
 
     /**
      * Where to redirect upon successful registration
-     * 
+     *
      * @var string
      */
     protected $redirectTo = 'notices/create';
