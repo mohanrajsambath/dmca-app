@@ -4,7 +4,9 @@ use App\Http\Requests;
 use App\Http\Controllers\Controller;
 
 use App\Http\Requests\PrepareNoticeRequest;
+use App\Notice;
 use App\Provider;
+use Auth;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Http\Request;
 
@@ -18,7 +20,7 @@ class NoticesController extends Controller {
 
     public function index() {
 
-        return 'all notices';
+        return Auth::user()->notices;
     }
 
     public function create() {
@@ -39,11 +41,11 @@ class NoticesController extends Controller {
         return view('notices.confirm', compact('template'));
     }
 
-    public function store() {
+    public function store(Request $request) {
 
-        $data = session()->get('dmca');
+        $this->createNotice($request);
 
-        return $data;
+        return redirect('notices');
     }
 
     /**
@@ -59,5 +61,17 @@ class NoticesController extends Controller {
                 ];
 
         return view()->file(app_path('Http/Templates/dmca.blade.php'), $data);
+    }
+
+    /**
+     * @param Request $request
+     */
+    private function createNotice(Request $request)
+    {
+        $data = session()->get('dmca');
+
+        $notice = Notice::open($data)->useTemplate($request->input('template'));
+
+        Auth::user()->notices()->save($notice);
     }
 }
