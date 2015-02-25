@@ -14,16 +14,24 @@ class Notice extends Model {
         'provider_id'
     ];
 
-	public static function open(array $attributes) {
+    public function recipient() {
 
-        return new static($attributes);
+        return $this->belongsTo('App\Provider', 'provider_id');
     }
 
-    public function useTemplate($template) {
+    public function user() {
 
-        $this->template = $template;
+        return $this->belongsTo('App\User');
+    }
 
-        return $this;
+    public function getRecipientEmail() {
+
+        return $this->recipient->copyright_email;
+    }
+
+    public function getOwnerEmail() {
+
+        return $this->user->email;
     }
 
 }

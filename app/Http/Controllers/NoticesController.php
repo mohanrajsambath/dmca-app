@@ -7,8 +7,10 @@ use App\Http\Requests\PrepareNoticeRequest;
 use App\Notice;
 use App\Provider;
 use Auth;
+use Debugbar;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Http\Request;
+use Mail;
 
 class NoticesController extends Controller {
 
@@ -34,16 +36,22 @@ class NoticesController extends Controller {
 
         $data = $request->all();
 
-        $template = $this->compileDmcaTemplate($data, $auth);
+        session()->put('dmca', $data);
 
-        session()->flash('dmca', $data);
+        $template = $this->compileDmcaTemplate($data, $auth);
 
         return view('notices.confirm', compact('template'));
     }
 
     public function store(Request $request) {
 
-        $this->createNotice($request);
+        $notice = $this->createNotice($request);
+
+        Mail::queue('emails.dmca', compact('notice'), function($message) use ($notice) {
+            $message->from($notice->getOwnerEmail())
+                    ->to($notice->getRecipientEmail())
+                    ->subject('DMCA Notice');
+        });
 
         return redirect('notices');
     }
@@ -68,10 +76,10 @@ class NoticesController extends Controller {
      */
     private function createNotice(Request $request)
     {
-        $data = session()->get('dmca');
+        $notice = session()->get('dmca') + ['template' => $request->input('template')];
 
-        $notice = Notice::open($data)->useTemplate($request->input('template'));
+        $notice = Auth::user()->notices()->create($notice);
 
-        Auth::user()->notices()->save($notice);
+        return $notice;
     }
 }
